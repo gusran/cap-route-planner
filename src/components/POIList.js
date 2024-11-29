@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import POIItem from './POIItem';
 import { TextField, Button, List } from '@mui/material';
+import { v4 as uuidv4 } from 'uuid'; // Import uuid
 
 function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute }) {
     const [autocomplete, setAutocomplete] = useState(null);
@@ -35,7 +36,7 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
 
         // Create a new POI
         const poi = {
-            id: place.place_id || `${location.lat()}_${location.lng()}`, // Unique ID
+            id: uuidv4(), // Unique ID
             name: place.name,
             location: location,
         };

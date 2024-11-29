@@ -6,7 +6,6 @@ import './App.css';
 function App() {
   return (
       <div className="App">
-        <h1>Civil Air Patrol Route Planner</h1>
         <MapContainer />
       </div>
   );

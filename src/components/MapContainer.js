@@ -189,6 +189,8 @@ function MapContainer() {
                 startY: yPosition,
                 styles: { fontSize: 12 },
                 headStyles: { fillColor: [22, 160, 133] },
+                theme: 'striped',
+                margin: { horizontal: 10 },
             });
 
             // Update yPosition to after the table
@@ -199,29 +201,12 @@ function MapContainer() {
         for (const [index, poi] of poiList.entries()) {
             console.log(`Processing POI ${index + 1}: ${poi.name}`);
 
-            // Add waypoint title
-            doc.setFontSize(14);
-            doc.text(`Waypoint ${index + 1}: ${poi.name}`, 10, yPosition);
-            yPosition += 10;
-
-            // Add leg details if applicable
-            if (index < legDetails.length) {
-                const leg = legDetails[index];
-                doc.setFontSize(12);
-                doc.text(`Distance to next waypoint: ${leg.distance} NM`, 10, yPosition);
-                yPosition += 7;
-                doc.text(`Heading to next waypoint: ${leg.heading}°`, 10, yPosition);
-                yPosition += 10;
-            }
-
-            // Convert decimal degrees to degrees and minutes
+            // Add waypoint title with coordinates inline
             const poiLatFormatted = convertDecimalToDegMin(poi.location.lat(), 'lat');
             const poiLngFormatted = convertDecimalToDegMin(poi.location.lng(), 'lng');
-
-            // Add coordinates inline
-            doc.setFontSize(12);
-            doc.text(`Coordinates: (${poiLatFormatted} ${poiLngFormatted})`, 10, yPosition);
-            yPosition += 7;
+            doc.setFontSize(14);
+            doc.text(`Waypoint ${index + 1}: ${poi.name} (${poiLatFormatted} ${poiLngFormatted})`, 10, yPosition);
+            yPosition += 10;
 
             // Generate Static Map URL for Satellite Map
             const markerLabel = index + 1;
@@ -278,6 +263,7 @@ function MapContainer() {
         try {
             doc.save('flight_plan.pdf');
             console.log('PDF saved successfully');
+            alert('PDF generated successfully!');
         } catch (error) {
             console.error('Error saving PDF:', error);
             alert(`Failed to save PDF: ${error.message}`);

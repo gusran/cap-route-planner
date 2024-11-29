@@ -1,7 +1,7 @@
 // src/components/POIItem.js
 
 import React, { useState } from 'react';
-import { ListItem, ListItemText, IconButton, TextField } from '@mui/material';
+import { ListItem, ListItemText, IconButton, TextField, Typography, Box } from '@mui/material';
 import { Delete, ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { convertDecimalToDegMin } from '../utils/convertCoordinates';
 
@@ -20,20 +20,24 @@ function POIItem({ poi, index, movePOI, handleNameChange, removePOI, totalPOIs }
         <ListItem divider>
             <ListItemText
                 primary={
-                    <TextField
-                        value={name}
-                        onChange={handleChange}
-                        placeholder="Enter POI Name" // Use placeholder instead of label
-                        variant="standard" // Use 'standard' variant for minimal styling
-                        size="small"
-                        fullWidth
-                        InputProps={{
-                            disableUnderline: true, // Remove underline for a cleaner look
-                        }}
-                    />
+                    <Box display="flex" alignItems="center">
+                        <TextField
+                            value={name}
+                            onChange={handleChange}
+                            placeholder="Enter POI Name" // Placeholder instead of label
+                            variant="standard" // Minimal styling
+                            size="small"
+                            fullWidth
+                            InputProps={{
+                                disableUnderline: true, // Remove underline for a cleaner look
+                            }}
+                            style={{ marginRight: '8px' }} // Spacing between name and coordinates
+                        />
+                        <Typography variant="body2" color="textSecondary">
+                            ({poiLatFormatted} {poiLngFormatted})
+                        </Typography>
+                    </Box>
                 }
-                secondary={`Coordinates: ${poiLatFormatted} ${poiLngFormatted}`}
-                style={{ paddingLeft: 0 }} // Remove left padding if a frame was implemented via padding
             />
             <IconButton
                 onClick={() => movePOI(index, -1)}

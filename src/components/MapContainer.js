@@ -6,6 +6,7 @@ import FlightInfo from './FlightInfo';
 import LegDetails from './LegDetails';
 import { Container, Grid, Typography, Button, CircularProgress, LinearProgress } from '@mui/material';
 import jsPDF from 'jspdf';
+import { generateOverviewMapUrl } from '../utils/overviewMap'; // Import the overview map generator
 import { getStaticMapUrl } from '../utils/staticMap';
 import { convertBlobToBase64 } from '../utils/convertBlobToBase64';
 
@@ -274,39 +275,6 @@ function MapContainer() {
 
         setIsGeneratingPDF(false);
         setPdfProgress(0);
-    };
-
-    // Helper function to generate overview map URL
-    const generateOverviewMapUrl = (poiList, apiKey) => {
-        if (poiList.length === 0) return '';
-
-        // Calculate the center of all POIs
-        const avgLat = poiList.reduce((sum, poi) => sum + poi.location.lat(), 0) / poiList.length;
-        const avgLng = poiList.reduce((sum, poi) => sum + poi.location.lng(), 0) / poiList.length;
-
-        // Prepare markers
-        const markers = poiList.map((poi, index) => ({
-            color: 'red',
-            label: `${index + 1}`,
-            lat: poi.location.lat(),
-            lng: poi.location.lng(),
-        }));
-
-        // Prepare path
-        const path = poiList.map(poi => `${poi.location.lat()},${poi.location.lng()}`).join('|');
-
-        return getStaticMapUrl({
-            centerLat: avgLat,
-            centerLng: avgLng,
-            zoom: 4,
-            size: '800x600',
-            scale: 2,
-            format: 'png',
-            mapType: 'satellite',
-            markers: markers,
-            path: path,
-            apiKey: apiKey,
-        });
     };
 
     return (

@@ -9,11 +9,11 @@ function MapContainer() {
     const [map, setMap] = useState(null);
     const [poiList, setPoiList] = useState([]);
     const [markers, setMarkers] = useState([]);
-    const [polylines, setPolylines] = useState([]);
     const [totalDistance, setTotalDistance] = useState(0);
     const [averageSpeed, setAverageSpeed] = useState(100); // Default speed in knots
     const [legDetails, setLegDetails] = useState([]);
     const mapRef = useRef(null);
+    const polylinesRef = useRef([]); // Use a ref for polylines
 
     useEffect(() => {
         const google = window.google;
@@ -33,12 +33,17 @@ function MapContainer() {
             // Not enough POIs to draw a route
             setTotalDistance(0);
             setLegDetails([]);
+
+            // Clear existing polylines
+            polylinesRef.current.forEach((polyline) => polyline.setMap(null));
+            polylinesRef.current = [];
+
             return;
         }
 
         // Clear existing polylines
-        polylines.forEach((polyline) => polyline.setMap(null));
-        setPolylines([]);
+        polylinesRef.current.forEach((polyline) => polyline.setMap(null));
+        polylinesRef.current = [];
 
         let distance = 0;
         const legs = [];
@@ -82,7 +87,11 @@ function MapContainer() {
             });
             newPolylines.push(polyline);
         }
-        setPolylines(newPolylines);
+
+        // Update the polylines ref
+        polylinesRef.current = newPolylines;
+
+        // Update state
         setTotalDistance(distance);
         setLegDetails(legs);
     };

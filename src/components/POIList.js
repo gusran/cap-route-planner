@@ -3,7 +3,7 @@
 /* global google */
 import React, { useState, useEffect, useRef } from 'react';
 import POIItem from './POIItem';
-import { TextField, Button, Typography, List } from '@mui/material';
+import { TextField, Button, List } from '@mui/material';
 
 function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute }) {
     const [autocomplete, setAutocomplete] = useState(null);
@@ -200,9 +200,6 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
                     Add POI
                 </Button>
             </div>
-            <Typography variant="h5" gutterBottom>
-                Points of Interest
-            </Typography>
             <List>
                 {poiList.map((poi, index) => (
                     <POIItem

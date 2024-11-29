@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import POIList from './POIList';
 import FlightInfo from './FlightInfo';
 import LegDetails from './LegDetails';
-import { Container, Grid, Typography, Button, CircularProgress, LinearProgress } from '@mui/material';
+import { Container, Grid, Button, CircularProgress, LinearProgress } from '@mui/material';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable'; // Import the autotable plugin
 import { generateOverviewMapUrl } from '../utils/overviewMap'; // Import the overview map generator
@@ -274,10 +274,8 @@ function MapContainer() {
     };
 
     return (
-        <Container>
-            <Typography variant="h4" align="center" gutterBottom>
-                Civil Air Patrol Route Planner
-            </Typography>
+        <Container sx={{ mt: 4 }}> {/* Added top margin */}
+            {/* Main Title Removed */}
             <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
                     <POIList
@@ -298,7 +296,7 @@ function MapContainer() {
                         color="secondary"
                         onClick={generatePDF}
                         disabled={isGeneratingPDF || poiList.length === 0}
-                        style={{ marginTop: '16px' }}
+                        sx={{ mt: 2 }} // Replaced inline style with sx prop
                     >
                         {isGeneratingPDF ? (
                             <>
@@ -313,7 +311,7 @@ function MapContainer() {
                         <LinearProgress
                             variant="determinate"
                             value={pdfProgress}
-                            style={{ marginTop: '10px' }}
+                            sx={{ mt: 1 }} // Replaced inline style with sx prop
                         />
                     )}
                 </Grid>

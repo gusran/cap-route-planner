@@ -10,9 +10,6 @@ function LegDetails({ legDetails }) {
 
     return (
         <div id="leg-details" style={{ marginTop: '20px' }}>
-            <Typography variant="h5" gutterBottom>
-                Leg Details
-            </Typography>
             <TableContainer component={Paper}>
                 <Table aria-label="leg details table">
                     <TableHead>

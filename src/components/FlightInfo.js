@@ -8,9 +8,6 @@ function FlightInfo({ totalDistance, averageSpeed, setAverageSpeed }) {
 
     return (
         <div>
-            <Typography variant="h6" gutterBottom>
-                Flight Information
-            </Typography>
             <Typography variant="body1">
                 Total Distance: {totalDistance.toFixed(2)} NM
             </Typography>

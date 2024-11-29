@@ -1,38 +1,50 @@
 // src/components/POIList.js
 /* global google */
-import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import React, { useState, useEffect, useRef } from 'react';
 
 function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute }) {
     const [autocomplete, setAutocomplete] = useState(null);
+    const inputRef = useRef(null);
 
+    // Initialize Google Maps Autocomplete
     useEffect(() => {
-        if (map && !autocomplete) {
-            const input = document.getElementById('search-input');
-            const autocompleteObj = new google.maps.places.Autocomplete(input);
+        if (map && !autocomplete && inputRef.current) {
+            const autocompleteObj = new google.maps.places.Autocomplete(inputRef.current);
             autocompleteObj.bindTo('bounds', map);
             setAutocomplete(autocompleteObj);
         }
     }, [map, autocomplete]);
 
     const addPOI = () => {
+        if (!autocomplete) {
+            alert('Autocomplete is not initialized yet. Please try again.');
+            return;
+        }
+
         const place = autocomplete.getPlace();
+
         if (!place || !place.geometry) {
             alert('Please select a valid place from the suggestions.');
             return;
         }
+
         const location = place.geometry.location;
+
+        // Create a new marker
         const marker = new google.maps.Marker({
             position: location,
             map: map,
             label: (poiList.length + 1).toString(),
         });
-        const newMarkers = [...markers, marker];
+
         const poi = {
+            id: place.place_id || `${location.lat()}_${location.lng()}`, // Unique ID
             name: place.name,
             location: location,
             marker: marker,
         };
+
+        const newMarkers = [...markers, marker];
         const newPoiList = [...poiList, poi];
 
         // Update state
@@ -41,7 +53,10 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
 
         adjustMapBounds(newMarkers);
 
-        // Pass updated data to updateRoute
+        // Clear the input field
+        inputRef.current.value = '';
+
+        // Update the route with updated data
         updateRoute(newMarkers, newPoiList);
     };
 
@@ -51,65 +66,72 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
         map.fitBounds(bounds);
     };
 
-    const onDragEnd = (result) => {
-        if (!result.destination) {
+    const movePOI = (index, direction) => {
+        const newIndex = index + direction;
+
+        // Ensure new index is within bounds
+        if (newIndex < 0 || newIndex >= poiList.length) {
             return;
         }
 
-        const reorderedPOIs = Array.from(poiList);
-        const [movedPOI] = reorderedPOIs.splice(result.source.index, 1);
-        reorderedPOIs.splice(result.destination.index, 0, movedPOI);
+        // Copy the poiList and markers arrays
+        const newPoiList = [...poiList];
+        const newMarkers = [...markers];
 
-        // Create new markers in the new order
-        const newMarkers = reorderedPOIs.map((poi, index) => {
-            const marker = new google.maps.Marker({
-                position: poi.location,
-                map: map,
-                label: (index + 1).toString(),
-            });
-            return marker;
-        });
+        // Swap POIs in newPoiList
+        [newPoiList[index], newPoiList[newIndex]] = [newPoiList[newIndex], newPoiList[index]];
 
         // Remove existing markers from the map
         markers.forEach((marker) => marker.setMap(null));
 
+        // Recreate markers in the new order with updated labels
+        const updatedMarkers = newPoiList.map((poi, idx) => {
+            const marker = new google.maps.Marker({
+                position: poi.location,
+                map: map,
+                label: (idx + 1).toString(),
+            });
+            return marker;
+        });
+
         // Update state
-        setMarkers(newMarkers);
-        setPoiList(reorderedPOIs);
+        setPoiList(newPoiList);
+        setMarkers(updatedMarkers);
 
         // Update the route with updated data
-        updateRoute(newMarkers, reorderedPOIs);
+        updateRoute(updatedMarkers, newPoiList);
     };
 
     return (
         <div id="poi-list">
             <div id="poi-input">
-                <input id="search-input" type="text" placeholder="Search for POIs" />
+                <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search for POIs"
+                    ref={inputRef}
+                    onFocus={() => {
+                        if (autocomplete) {
+                            autocomplete.setTypes(['geocode', 'establishment']);
+                        }
+                    }}
+                />
                 <button onClick={addPOI}>Add POI</button>
             </div>
             <h2>Points of Interest</h2>
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="poiList">
-                    {(provided) => (
-                        <ul id="poi-ul" {...provided.droppableProps} ref={provided.innerRef}>
-                            {poiList.map((poi, index) => (
-                                <Draggable key={index} draggableId={`poi-${index}`} index={index}>
-                                    {(provided) => (
-                                        <li
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                        >
-                                            {poi.name}
-                                        </li>
-                                    )}
-                                </Draggable>
-                            ))}
-                            {provided.placeholder}
-                        </ul>
-                    )}
-                </Droppable>
-            </DragDropContext>
+            <ul>
+                {poiList.map((poi, index) => (
+                    <li key={poi.id}>
+                        {poi.name}
+                        <button onClick={() => movePOI(index, -1)} disabled={index === 0}>
+                            ↑
+                        </button>
+                        <button onClick={() => movePOI(index, 1)} disabled={index === poiList.length - 1}>
+                            ↓
+                        </button>
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }

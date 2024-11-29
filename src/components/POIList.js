@@ -41,7 +41,7 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
         };
 
         // Create a new marker
-        const marker = createMarker(poi, poiList.length, [...poiList, poi], [...markers]);
+        const marker = createMarker(poi, poiList.length);
 
         const newMarkers = [...markers, marker];
         const newPoiList = [...poiList, poi];
@@ -83,9 +83,7 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
         markers.forEach((marker) => marker.setMap(null));
 
         // Recreate markers in the new order with updated labels
-        const updatedMarkers = newPoiList.map((poi, idx) =>
-            createMarker(poi, idx, newPoiList, [])
-        );
+        const updatedMarkers = newPoiList.map((poi, idx) => createMarker(poi, idx));
 
         // Update state
         setPoiList(newPoiList);
@@ -96,33 +94,37 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
     };
 
     // Function to create a marker with drag functionality
-    const createMarker = (poi, index, poiArray, markerArray) => {
+    const createMarker = (poi, index) => {
         const marker = new google.maps.Marker({
             position: poi.location,
             map: map,
             label: (index + 1).toString(),
-            draggable: true, // Make the marker draggable
+            draggable: true,
         });
 
         // Add dragend event listener
         marker.addListener('dragend', () => {
             const newPosition = marker.getPosition();
 
-            // Update the POI's location in poiList
-            const updatedPoiList = poiArray.map((p) => {
-                if (p.id === poi.id) {
-                    return { ...p, location: newPosition };
-                }
-                return p;
-            });
-            setPoiList(updatedPoiList);
+            // Update the POI's location using functional state update
+            setPoiList((prevPoiList) => {
+                const updatedPoiList = prevPoiList.map((p) => {
+                    if (p.id === poi.id) {
+                        return { ...p, location: newPosition };
+                    }
+                    return p;
+                });
 
-            // Update the route
-            updateRoute(markerArray.length > 0 ? markerArray : markers, updatedPoiList);
+                // Update the route with the updated POI list
+                updateRoute(undefined, updatedPoiList);
+
+                return updatedPoiList;
+            });
         });
 
         return marker;
     };
+
 
     // Function to handle name change
     const handleNameChange = (id, newName) => {

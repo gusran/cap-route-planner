@@ -116,6 +116,19 @@ function MapContainer() {
             return;
         }
 
+        // Validate POIs
+        for (const [index, poi] of poiList.entries()) {
+            if (
+                !poi.name ||
+                !poi.location ||
+                typeof poi.location.lat !== 'function' ||
+                typeof poi.location.lng !== 'function'
+            ) {
+                alert(`Invalid POI detected at index ${index}: ${JSON.stringify(poi)}`);
+                return;
+            }
+        }
+
         setIsGeneratingPDF(true);
         setPdfProgress(0);
 
@@ -130,6 +143,8 @@ function MapContainer() {
         const totalPOIs = poiList.length;
 
         for (const [index, poi] of poiList.entries()) {
+            console.log(`Processing POI ${index + 1}: ${poi.name}`);
+
             // Add waypoint title
             doc.setFontSize(14);
             doc.text(`Waypoint ${index + 1}: ${poi.name}`, 10, yPosition);
@@ -146,12 +161,13 @@ function MapContainer() {
             }
 
             // Generate Static Map URL
-            const staticMapUrl = getStaticMapUrl(poi, GOOGLE_MAPS_API_KEY);
+            const markerLabel = index + 1;
+            const staticMapUrl = getStaticMapUrl(poi, GOOGLE_MAPS_API_KEY, markerLabel);
             console.log(`Fetching Static Map for POI "${poi.name}": ${staticMapUrl}`);
 
             try {
                 // Fetch the image as a blob
-                const response = await fetch(staticMapUrl);
+                const response = await fetch(staticMapUrl, { mode: 'cors' });
                 console.log(`Response Status for POI "${poi.name}":`, response.status, response.statusText);
 
                 if (!response.ok) {
@@ -165,8 +181,14 @@ function MapContainer() {
                 const base64Image = await convertBlobToBase64(blob);
                 console.log(`Base64 Image Length for POI "${poi.name}":`, base64Image.length);
 
+                // Validate base64 string
+                if (!base64Image || base64Image.length < 100) { // Arbitrary length check
+                    throw new Error('Received invalid base64 image data.');
+                }
+
                 // Add the image to the PDF
                 doc.addImage(base64Image, 'PNG', 10, yPosition, 190, 100);
+                console.log(`Added image for POI "${poi.name}" to PDF at position (${10}, ${yPosition})`);
                 yPosition += 105;
 
                 // Add attribution
@@ -176,10 +198,12 @@ function MapContainer() {
 
                 // Update progress
                 setPdfProgress(((index + 1) / totalPOIs) * 100);
+                console.log(`Progress: ${((index + 1) / totalPOIs) * 100}%`);
 
                 // Check if adding the next POI would exceed the page height
                 if (yPosition + 120 > doc.internal.pageSize.getHeight()) {
                     doc.addPage();
+                    console.log('Added new page to PDF');
                     yPosition = 15;
                 }
             } catch (error) {
@@ -192,11 +216,18 @@ function MapContainer() {
         }
 
         // Save the PDF
-        doc.save('flight_plan.pdf');
+        try {
+            doc.save('flight_plan.pdf');
+            console.log('PDF saved successfully');
+        } catch (error) {
+            console.error('Error saving PDF:', error);
+            alert(`Failed to save PDF: ${error.message}`);
+        }
 
         setIsGeneratingPDF(false);
         setPdfProgress(0);
     };
+
 
     return (
         <Container>

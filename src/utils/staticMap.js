@@ -1,12 +1,16 @@
 // src/utils/staticMap.js
 
-export const getStaticMapUrl = (poi, apiKey) => {
-    const { lat, lng } = poi.location;
-    const center = `${lat},${lng}`;
-    const zoom = 17; // Adjust zoom level as needed
-    const size = '500x300'; // Image size in pixels
-    const maptype = 'satellite';
-    const marker = `color:red|label:P|${center}`;
+// src/utils/staticMap.js
 
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${center}&zoom=${zoom}&size=${size}&maptype=${maptype}&markers=${marker}&key=${apiKey}`;
+export const getStaticMapUrl = (poi, apiKey, label) => {
+    const lat = poi.location.lat(); // Access latitude using the method
+    const lng = poi.location.lng(); // Access longitude using the method
+    const zoom = 15; // Adjust zoom level as needed
+    const size = '600x400'; // Width x Height in pixels
+    const scale = 2; // For higher resolution
+    const format = 'png'; // Ensure format matches the expected image type
+    const markers = `color:red|label:${label}|${lat},${lng}`;
+
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&scale=${scale}&format=${format}&markers=${encodeURIComponent(markers)}&key=${apiKey}`;
 };
+

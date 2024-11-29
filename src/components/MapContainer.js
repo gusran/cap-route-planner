@@ -1,10 +1,19 @@
 // src/components/MapContainer.js
 
 import React, { useState, useEffect, useRef } from 'react';
+import {
+    Container,
+    Grid,
+    Button,
+    CircularProgress,
+    LinearProgress,
+    TextField,
+    Snackbar,
+} from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
 import POIList from './POIList';
 import FlightInfo from './FlightInfo';
 import LegDetails from './LegDetails';
-import { Container, Grid, Button, CircularProgress, LinearProgress } from '@mui/material';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable'; // Import the autotable plugin
 import { generateOverviewMapUrl } from '../utils/overviewMap'; // Import the overview map generator
@@ -12,17 +21,25 @@ import { getStaticMapUrl } from '../utils/staticMap';
 import { convertDecimalToDegMin } from '../utils/convertCoordinates'; // Import the conversion function
 import { fetchImage } from '../utils/cache'; // Import the fetchImage function
 
+const Alert = React.forwardRef(function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 function MapContainer() {
+    // State variables
     const [map, setMap] = useState(null);
     const [poiList, setPoiList] = useState([]);
     const [markers, setMarkers] = useState([]);
     const [totalDistance, setTotalDistance] = useState(0);
     const [averageSpeed, setAverageSpeed] = useState(100); // Default speed in knots
     const [legDetails, setLegDetails] = useState([]);
-    const mapRef = useRef(null);
-    const polylinesRef = useRef([]); // Use a ref for polylines
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // State for loading indicator
     const [pdfProgress, setPdfProgress] = useState(0); // Progress state
+    const [routeName, setRouteName] = useState('Route 1'); // New state for route name
+    const [openSnackbar, setOpenSnackbar] = useState(false); // State for success notification
+
+    const mapRef = useRef(null);
+    const polylinesRef = useRef([]); // Use a ref for polylines
 
     // Replace 'REACT_APP_GOOGLE_MAPS_API_KEY' with your actual env variable name
     const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -69,8 +86,14 @@ function MapContainer() {
 
         // Draw new route
         for (let i = 0; i < poiListToUse.length - 1; i++) {
-            const origin = new google.maps.LatLng(poiListToUse[i].location.lat(), poiListToUse[i].location.lng());
-            const destination = new google.maps.LatLng(poiListToUse[i + 1].location.lat(), poiListToUse[i + 1].location.lng());
+            const origin = new google.maps.LatLng(
+                poiListToUse[i].location.lat(),
+                poiListToUse[i].location.lng()
+            );
+            const destination = new google.maps.LatLng(
+                poiListToUse[i + 1].location.lat(),
+                poiListToUse[i + 1].location.lng()
+            );
 
             // Calculate distance in meters
             const legDistanceMeters = google.maps.geometry.spherical.computeDistanceBetween(
@@ -104,7 +127,9 @@ function MapContainer() {
                 map: map,
             });
             newPolylines.push(polyline);
-            console.log(`Polyline drawn from "${poiListToUse[i].name}" to "${poiListToUse[i + 1].name}"`);
+            console.log(
+                `Polyline drawn from "${poiListToUse[i].name}" to "${poiListToUse[i + 1].name}"`
+            );
         }
 
         // Update the polylines ref
@@ -141,9 +166,9 @@ function MapContainer() {
         const doc = new jsPDF('p', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
 
-        // Add title
+        // Add route name as title
         doc.setFontSize(18);
-        doc.text('Flight Plan', pageWidth / 2, 15, { align: 'center' });
+        doc.text(routeName, pageWidth / 2, 15, { align: 'center' });
 
         let yPosition = 25;
         const totalPOIs = poiList.length;
@@ -205,7 +230,11 @@ function MapContainer() {
             const poiLatFormatted = convertDecimalToDegMin(poi.location.lat(), 'lat');
             const poiLngFormatted = convertDecimalToDegMin(poi.location.lng(), 'lng');
             doc.setFontSize(14);
-            doc.text(`Waypoint ${index + 1}: ${poi.name} (${poiLatFormatted} ${poiLngFormatted})`, 10, yPosition);
+            doc.text(
+                `Waypoint ${index + 1}: ${poi.name} (${poiLatFormatted} ${poiLngFormatted})`,
+                10,
+                yPosition
+            );
             yPosition += 10;
 
             // Generate Static Map URL for Satellite Map
@@ -218,12 +247,14 @@ function MapContainer() {
                 scale: 2,
                 format: 'png',
                 mapType: 'satellite',
-                markers: [{
-                    color: 'red',
-                    label: `${markerLabel}`,
-                    lat: poi.location.lat(),
-                    lng: poi.location.lng(),
-                }],
+                markers: [
+                    {
+                        color: 'red',
+                        label: `${markerLabel}`,
+                        lat: poi.location.lat(),
+                        lng: poi.location.lng(),
+                    },
+                ],
                 apiKey: GOOGLE_MAPS_API_KEY,
             });
 
@@ -263,7 +294,7 @@ function MapContainer() {
         try {
             doc.save('flight_plan.pdf');
             console.log('PDF saved successfully');
-            alert('PDF generated successfully!');
+            setOpenSnackbar(true); // Open the snackbar on success
         } catch (error) {
             console.error('Error saving PDF:', error);
             alert(`Failed to save PDF: ${error.message}`);
@@ -274,53 +305,76 @@ function MapContainer() {
     };
 
     return (
-        <Container sx={{ mt: 4 }}> {/* Added top margin */}
-            {/* Main Title Removed */}
-            <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                    <POIList
-                        map={map}
-                        poiList={poiList}
-                        setPoiList={setPoiList}
-                        markers={markers}
-                        setMarkers={setMarkers}
-                        updateRoute={updateRoute}
-                    />
-                    <FlightInfo
-                        totalDistance={totalDistance}
-                        averageSpeed={averageSpeed}
-                        setAverageSpeed={setAverageSpeed}
-                    />
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={generatePDF}
-                        disabled={isGeneratingPDF || poiList.length === 0}
-                        sx={{ mt: 2 }} // Replaced inline style with sx prop
-                    >
-                        {isGeneratingPDF ? (
-                            <>
-                                <CircularProgress size={24} color="inherit" />
-                                &nbsp; Generating PDF...
-                            </>
-                        ) : (
-                            'Export Route to PDF'
-                        )}
-                    </Button>
-                    {isGeneratingPDF && (
-                        <LinearProgress
-                            variant="determinate"
-                            value={pdfProgress}
-                            sx={{ mt: 1 }} // Replaced inline style with sx prop
+        <>
+            <Container sx={{ mt: 4 }}> {/* Added top margin */}
+                <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                        {/* Route Name Input */}
+                        <TextField
+                            label="Route Name"
+                            variant="outlined"
+                            size="small"
+                            fullWidth
+                            value={routeName}
+                            onChange={(e) => setRouteName(e.target.value)}
+                            sx={{ mb: 2 }} // Adds bottom margin for spacing
                         />
-                    )}
+                        <POIList
+                            map={map}
+                            poiList={poiList}
+                            setPoiList={setPoiList}
+                            markers={markers}
+                            setMarkers={setMarkers}
+                            updateRoute={updateRoute}
+                        />
+                        <FlightInfo
+                            totalDistance={totalDistance}
+                            averageSpeed={averageSpeed}
+                            setAverageSpeed={setAverageSpeed}
+                        />
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={generatePDF}
+                            disabled={isGeneratingPDF || poiList.length === 0}
+                            sx={{ mt: 2 }} // Replaced inline style with sx prop
+                        >
+                            {isGeneratingPDF ? (
+                                <>
+                                    <CircularProgress size={24} color="inherit" />
+                                    &nbsp; Generating PDF...
+                                </>
+                            ) : (
+                                'Export Route to PDF'
+                            )}
+                        </Button>
+                        {isGeneratingPDF && (
+                            <LinearProgress
+                                variant="determinate"
+                                value={pdfProgress}
+                                sx={{ mt: 1 }} // Replaced inline style with sx prop
+                            />
+                        )}
+                    </Grid>
+                    <Grid item xs={12} md={8}>
+                        <div id="map" ref={mapRef} style={{ height: '60vh', width: '100%' }}></div>
+                        <LegDetails legDetails={legDetails} />
+                    </Grid>
                 </Grid>
-                <Grid item xs={12} md={8}>
-                    <div id="map" ref={mapRef} style={{ height: '60vh', width: '100%' }}></div>
-                    <LegDetails legDetails={legDetails} />
-                </Grid>
-            </Grid>
-        </Container>
+            </Container>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={6000}
+                onClose={() => setOpenSnackbar(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setOpenSnackbar(false)} severity="success" sx={{ width: '100%' }}>
+                    PDF generated successfully!
+                </Alert>
+            </Snackbar>
+        </>
     );
 }
 

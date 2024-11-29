@@ -27,24 +27,30 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
             map: map,
             label: (poiList.length + 1).toString(),
         });
-        setMarkers([...markers, marker]);
+        const newMarkers = [...markers, marker];
         const poi = {
             name: place.name,
             location: location,
             marker: marker,
         };
-        setPoiList([...poiList, poi]);
-        adjustMapBounds();
-        updateRoute();
+        const newPoiList = [...poiList, poi];
+
+        // Update state
+        setMarkers(newMarkers);
+        setPoiList(newPoiList);
+
+        adjustMapBounds(newMarkers);
+
+        // Pass updated data to updateRoute
+        updateRoute(newMarkers, newPoiList);
     };
 
-    const adjustMapBounds = () => {
+    const adjustMapBounds = (markersToUse) => {
         const bounds = new google.maps.LatLngBounds();
-        markers.forEach((marker) => bounds.extend(marker.getPosition()));
+        markersToUse.forEach((marker) => bounds.extend(marker.getPosition()));
         map.fitBounds(bounds);
     };
 
-    // Implement drag-and-drop and other functionalities here
     const onDragEnd = (result) => {
         if (!result.destination) {
             return;
@@ -53,20 +59,6 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
         const reorderedPOIs = Array.from(poiList);
         const [movedPOI] = reorderedPOIs.splice(result.source.index, 1);
         reorderedPOIs.splice(result.destination.index, 0, movedPOI);
-
-        // Update the poiList state
-        setPoiList(reorderedPOIs);
-
-        // Update markers to match the new order
-        updateMarkersAndRoute(reorderedPOIs);
-    };
-
-    const updateMarkersAndRoute = (reorderedPOIs) => {
-        // Remove existing markers from the map
-        markers.forEach((marker) => marker.setMap(null));
-
-        // Clear the markers array
-        setMarkers([]);
 
         // Create new markers in the new order
         const newMarkers = reorderedPOIs.map((poi, index) => {
@@ -78,13 +70,16 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
             return marker;
         });
 
-        // Update the markers state
+        // Remove existing markers from the map
+        markers.forEach((marker) => marker.setMap(null));
+
+        // Update state
         setMarkers(newMarkers);
+        setPoiList(reorderedPOIs);
 
-        // Update the route
-        updateRoute(newMarkers);
+        // Update the route with updated data
+        updateRoute(newMarkers, reorderedPOIs);
     };
-
 
     return (
         <div id="poi-list">

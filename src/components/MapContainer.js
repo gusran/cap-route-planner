@@ -24,10 +24,18 @@ function MapContainer() {
         setMap(mapObj);
     }, []);
 
-    const updateRoute = (markersParam) => {
+    const updateRoute = (markersParam, poiListParam) => {
         const google = window.google;
 
         const markersToUse = markersParam || markers;
+        const poiListToUse = poiListParam || poiList;
+
+        if (markersToUse.length < 2) {
+            // Not enough markers to draw a route
+            setTotalDistance(0);
+            setLegDetails([]);
+            return;
+        }
 
         // Clear existing polylines
         polylines.forEach((polyline) => polyline.setMap(null));
@@ -35,6 +43,7 @@ function MapContainer() {
 
         let distance = 0;
         const legs = [];
+        const newPolylines = [];
 
         // Draw new route
         for (let i = 0; i < markersToUse.length - 1; i++) {
@@ -42,9 +51,12 @@ function MapContainer() {
             const destination = markersToUse[i + 1].getPosition();
 
             // Calculate distance in meters
-            const legDistanceMeters = google.maps.geometry.spherical.computeDistanceBetween(origin, destination);
+            const legDistanceMeters = google.maps.geometry.spherical.computeDistanceBetween(
+                origin,
+                destination
+            );
 
-            // Convert distance to nautical miles (1 NM = 1852 meters)
+            // Convert distance to nautical miles
             const legDistanceNM = legDistanceMeters / 1852;
 
             // Calculate heading
@@ -54,10 +66,10 @@ function MapContainer() {
 
             // Save leg details
             legs.push({
-                from: poiList[i].name,
-                to: poiList[i + 1].name,
+                from: poiListToUse[i].name,
+                to: poiListToUse[i + 1].name,
                 distance: legDistanceNM.toFixed(2),
-                heading: ((heading + 360) % 360).toFixed(0), // Normalize heading to 0-359 degrees
+                heading: ((heading + 360) % 360).toFixed(0),
             });
 
             // Draw polyline
@@ -69,8 +81,9 @@ function MapContainer() {
                 strokeWeight: 2,
                 map: map,
             });
-            setPolylines((prevPolylines) => [...prevPolylines, polyline]);
+            newPolylines.push(polyline);
         }
+        setPolylines(newPolylines);
         setTotalDistance(distance);
         setLegDetails(legs);
     };

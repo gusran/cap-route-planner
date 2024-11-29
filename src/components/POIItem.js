@@ -1,82 +1,57 @@
 // src/components/POIItem.js
 
 import React, { useState } from 'react';
-import {
-    ListItem,
-    ListItemText,
-    IconButton,
-    TextField,
-} from '@mui/material';
-import {
-    ArrowUpward,
-    ArrowDownward,
-    Delete
-} from '@mui/icons-material';
+import { ListItem, ListItemText, IconButton, TextField } from '@mui/material';
+import { Delete, ArrowUpward, ArrowDownward } from '@mui/icons-material';
+import { convertDecimalToDegMin } from '../utils/convertCoordinates';
 
 function POIItem({ poi, index, movePOI, handleNameChange, removePOI, totalPOIs }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedName, setEditedName] = useState(poi.name);
+    const [name, setName] = useState(poi.name);
 
-    const saveName = () => {
-        if (editedName.trim() === '') {
-            alert('POI name cannot be empty.');
-            setEditedName(poi.name);
-        } else {
-            handleNameChange(poi.id, editedName.trim());
-        }
-        setIsEditing(false);
+    const handleChange = (e) => {
+        setName(e.target.value);
+        handleNameChange(poi.id, e.target.value);
     };
 
-    const cancelEdit = () => {
-        setEditedName(poi.name);
-        setIsEditing(false);
-    };
+    const poiLatFormatted = convertDecimalToDegMin(poi.location.lat(), 'lat');
+    const poiLngFormatted = convertDecimalToDegMin(poi.location.lng(), 'lng');
 
     return (
-        <ListItem
-            secondaryAction={
-                <>
-                    <IconButton
-                        edge="end"
-                        aria-label="move up"
-                        onClick={() => movePOI(index, -1)}
-                        disabled={index === 0}
-                    >
-                        <ArrowUpward />
-                    </IconButton>
-                    <IconButton
-                        edge="end"
-                        aria-label="move down"
-                        onClick={() => movePOI(index, 1)}
-                        disabled={index === totalPOIs - 1}
-                    >
-                        <ArrowDownward />
-                    </IconButton>
-                    <IconButton edge="end" aria-label="delete" onClick={() => removePOI(poi.id)}>
-                        <Delete />
-                    </IconButton>
-                </>
-            }
-        >
-            {isEditing ? (
-                <TextField
-                    value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    onBlur={saveName}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveName();
-                        else if (e.key === 'Escape') cancelEdit();
-                    }}
-                    autoFocus
-                    variant="standard"
-                />
-            ) : (
-                <ListItemText
-                    primary={poi.name}
-                    onClick={() => setIsEditing(true)}
-                    style={{ cursor: 'pointer' }}
-                />
-            )}
+        <ListItem divider>
+            <ListItemText
+                primary={
+                    <TextField
+                        value={name}
+                        onChange={handleChange}
+                        placeholder="Enter POI Name" // Use placeholder instead of label
+                        variant="standard" // Use 'standard' variant for minimal styling
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            disableUnderline: true, // Remove underline for a cleaner look
+                        }}
+                    />
+                }
+                secondary={`Coordinates: ${poiLatFormatted} ${poiLngFormatted}`}
+                style={{ paddingLeft: 0 }} // Remove left padding if a frame was implemented via padding
+            />
+            <IconButton
+                onClick={() => movePOI(index, -1)}
+                disabled={index === 0}
+                aria-label="move up"
+            >
+                <ArrowUpward />
+            </IconButton>
+            <IconButton
+                onClick={() => movePOI(index, 1)}
+                disabled={index === totalPOIs - 1}
+                aria-label="move down"
+            >
+                <ArrowDownward />
+            </IconButton>
+            <IconButton onClick={() => removePOI(poi.id)} aria-label="delete">
+                <Delete />
+            </IconButton>
         </ListItem>
     );
 }

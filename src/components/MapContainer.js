@@ -6,9 +6,11 @@ import FlightInfo from './FlightInfo';
 import LegDetails from './LegDetails';
 import { Container, Grid, Typography, Button, CircularProgress, LinearProgress } from '@mui/material';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable'; // Import the autotable plugin
 import { generateOverviewMapUrl } from '../utils/overviewMap'; // Import the overview map generator
 import { getStaticMapUrl } from '../utils/staticMap';
-import { convertBlobToBase64 } from '../utils/convertBlobToBase64';
+import { convertDecimalToDegMin } from '../utils/convertCoordinates'; // Import the conversion function
+import { fetchImage } from '../utils/cache'; // Import the fetchImage function
 
 function MapContainer() {
     const [map, setMap] = useState(null);
@@ -151,11 +153,7 @@ function MapContainer() {
         const overviewMapUrl = generateOverviewMapUrl(poiList, GOOGLE_MAPS_API_KEY);
         if (overviewMapUrl) {
             try {
-                const overviewBlob = await fetch(overviewMapUrl, { mode: 'cors' }).then(res => {
-                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                    return res.blob();
-                });
-                const overviewBase64 = await convertBlobToBase64(overviewBlob);
+                const overviewBase64 = await fetchImage(overviewMapUrl);
                 doc.addImage(overviewBase64, 'PNG', 10, yPosition, 190, 100);
                 console.log('Added overview map to PDF');
                 yPosition += 105;
@@ -168,26 +166,33 @@ function MapContainer() {
             }
         }
 
-        // 2. Add List of Legs
+        // 2. Add List of Legs as a Table
         if (legDetails.length > 0) {
             doc.setFontSize(16);
             doc.text('List of Legs', 10, yPosition);
             yPosition += 10;
 
-            doc.setFontSize(12);
-            legDetails.forEach((leg, index) => {
-                const legText = `Leg ${index + 1}: ${leg.from} to ${leg.to} - Distance: ${leg.distance} NM, Heading: ${leg.heading}°`;
-                doc.text(legText, 10, yPosition);
-                yPosition += 7;
+            // Prepare table columns and rows
+            const head = [['Leg Number', 'From', 'To', 'Distance (NM)', 'Heading (°)']];
+            const body = legDetails.map((leg, index) => [
+                `Leg ${index + 1}`,
+                leg.from,
+                leg.to,
+                leg.distance,
+                leg.heading,
+            ]);
 
-                // Check for page break
-                if (yPosition > doc.internal.pageSize.getHeight() - 20) {
-                    doc.addPage();
-                    yPosition = 15;
-                }
+            // Add table using autoTable
+            doc.autoTable({
+                head: head,
+                body: body,
+                startY: yPosition,
+                styles: { fontSize: 12 },
+                headStyles: { fillColor: [22, 160, 133] },
             });
 
-            yPosition += 5; // Add some spacing after the legs list
+            // Update yPosition to after the table
+            yPosition = doc.autoTable.previous.finalY + 10;
         }
 
         // 3. Add Detailed POIs with Satellite Maps
@@ -208,6 +213,15 @@ function MapContainer() {
                 doc.text(`Heading to next waypoint: ${leg.heading}°`, 10, yPosition);
                 yPosition += 10;
             }
+
+            // Convert decimal degrees to degrees and minutes
+            const poiLatFormatted = convertDecimalToDegMin(poi.location.lat(), 'lat');
+            const poiLngFormatted = convertDecimalToDegMin(poi.location.lng(), 'lng');
+
+            // Add coordinates inline
+            doc.setFontSize(12);
+            doc.text(`Coordinates: (${poiLatFormatted} ${poiLngFormatted})`, 10, yPosition);
+            yPosition += 7;
 
             // Generate Static Map URL for Satellite Map
             const markerLabel = index + 1;
@@ -231,11 +245,7 @@ function MapContainer() {
             console.log(`Fetching Satellite Map for POI "${poi.name}": ${satelliteMapUrl}`);
 
             try {
-                const satelliteBlob = await fetch(satelliteMapUrl, { mode: 'cors' }).then(res => {
-                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                    return res.blob();
-                });
-                const satelliteBase64 = await convertBlobToBase64(satelliteBlob);
+                const satelliteBase64 = await fetchImage(satelliteMapUrl);
                 doc.addImage(satelliteBase64, 'PNG', 10, yPosition, 190, 100);
                 console.log(`Added satellite map for POI "${poi.name}" to PDF`);
                 yPosition += 105;

@@ -136,6 +136,52 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
         updateRoute(markers, updatedPoiList);
     };
 
+    // Function to remove a POI
+    const removePOI = (poiId) => {
+        // Find the index of the POI to remove
+        const indexToRemove = poiList.findIndex((poi) => poi.id === poiId);
+        if (indexToRemove === -1) return;
+
+        // Remove the marker from the map
+        markers[indexToRemove].setMap(null);
+
+        // Create new arrays excluding the removed POI and marker
+        const newPoiList = poiList.filter((poi) => poi.id !== poiId);
+        const newMarkers = markers.filter((_, index) => index !== indexToRemove);
+
+        // Re-label the remaining markers and update their dragend event listeners
+        newMarkers.forEach((marker, index) => {
+            marker.setLabel((index + 1).toString());
+
+            // Remove existing dragend listener to prevent duplicates
+            google.maps.event.clearListeners(marker, 'dragend');
+
+            // Add updated dragend event listener
+            marker.addListener('dragend', () => {
+                const newPosition = marker.getPosition();
+
+                // Update the POI's location in poiList
+                const updatedPoiList = newPoiList.map((p) => {
+                    if (p.id === newPoiList[index].id) {
+                        return { ...p, location: newPosition };
+                    }
+                    return p;
+                });
+                setPoiList(updatedPoiList);
+
+                // Update the route
+                updateRoute(newMarkers, updatedPoiList);
+            });
+        });
+
+        // Update state
+        setPoiList(newPoiList);
+        setMarkers(newMarkers);
+
+        // Update the route
+        updateRoute(newMarkers, newPoiList);
+    };
+
     return (
         <div id="poi-list">
             <div id="poi-input">
@@ -161,6 +207,7 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
                         index={index}
                         movePOI={movePOI}
                         handleNameChange={handleNameChange}
+                        removePOI={removePOI}
                         totalPOIs={poiList.length}
                     />
                 ))}

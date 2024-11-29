@@ -1,7 +1,7 @@
 // src/components/POIItem.js
 import React, { useState } from 'react';
 
-function POIItem({ poi, index, movePOI, handleNameChange, totalPOIs }) {
+function POIItem({ poi, index, movePOI, handleNameChange, removePOI, totalPOIs }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState(poi.name);
 
@@ -48,6 +48,7 @@ function POIItem({ poi, index, movePOI, handleNameChange, totalPOIs }) {
             <button onClick={() => movePOI(index, 1)} disabled={index === totalPOIs - 1}>
                 ↓
             </button>
+            <button onClick={() => removePOI(poi.id)}>Delete</button>
         </li>
     );
 }

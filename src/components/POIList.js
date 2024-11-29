@@ -1,7 +1,9 @@
 // src/components/POIList.js
+
 /* global google */
 import React, { useState, useEffect, useRef } from 'react';
 import POIItem from './POIItem';
+import { TextField, Button, Typography, List } from '@mui/material';
 
 function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute }) {
     const [autocomplete, setAutocomplete] = useState(null);
@@ -184,22 +186,22 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
 
     return (
         <div id="poi-list">
-            <div id="poi-input">
-                <input
+            <div id="poi-input" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <TextField
                     id="search-input"
-                    type="text"
-                    placeholder="Search for POIs"
-                    ref={inputRef}
-                    onFocus={() => {
-                        if (autocomplete) {
-                            autocomplete.setTypes(['geocode', 'establishment']);
-                        }
-                    }}
+                    label="Search for POIs"
+                    variant="outlined"
+                    fullWidth
+                    inputRef={inputRef}
                 />
-                <button onClick={addPOI}>Add POI</button>
+                <Button variant="contained" color="primary" onClick={addPOI}>
+                    Add POI
+                </Button>
             </div>
-            <h2>Points of Interest</h2>
-            <ul>
+            <Typography variant="h5" gutterBottom>
+                Points of Interest
+            </Typography>
+            <List>
                 {poiList.map((poi, index) => (
                     <POIItem
                         key={poi.id}
@@ -211,7 +213,7 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
                         totalPOIs={poiList.length}
                     />
                 ))}
-            </ul>
+            </List>
         </div>
     );
 }

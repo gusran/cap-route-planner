@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import POIList from './POIList';
 import FlightInfo from './FlightInfo';
 import LegDetails from './LegDetails';
+import { Container, Grid, Typography } from '@mui/material';
 
 function MapContainer() {
     const [map, setMap] = useState(null);
@@ -26,6 +27,7 @@ function MapContainer() {
 
     const updateRoute = (markersParam, poiListParam) => {
         const google = window.google;
+
 
         const poiListToUse = poiListParam || poiList;
 
@@ -97,10 +99,12 @@ function MapContainer() {
     };
 
     return (
-        <div>
-            <h1>Civil Air Patrol Route Planner</h1>
-            <div id="main-content" style={{ display: 'flex', flexDirection: 'row' }}>
-                <div id="left-panel" style={{ flex: 1, padding: '10px', overflowY: 'auto' }}>
+        <Container>
+            <Typography variant="h4" align="center" gutterBottom>
+                Civil Air Patrol Route Planner
+            </Typography>
+            <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
                     <POIList
                         map={map}
                         poiList={poiList}
@@ -114,13 +118,13 @@ function MapContainer() {
                         averageSpeed={averageSpeed}
                         setAverageSpeed={setAverageSpeed}
                     />
-                </div>
-                <div id="map-and-details" style={{ flex: 2, padding: '10px' }}>
+                </Grid>
+                <Grid item xs={12} md={8}>
                     <div id="map" ref={mapRef} style={{ height: '60vh', width: '100%' }}></div>
                     <LegDetails legDetails={legDetails} />
-                </div>
-            </div>
-        </div>
+                </Grid>
+            </Grid>
+        </Container>
     );
 }
 

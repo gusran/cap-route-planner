@@ -1,14 +1,26 @@
 // src/App.js
+
 import React from 'react';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import MapContainer from './components/MapContainer';
-import './App.css';
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: '#1976d2', // Customize your primary color
+        },
+        secondary: {
+            main: '#dc004e', // Customize your secondary color
+        },
+    },
+});
 
 function App() {
-  return (
-      <div className="App">
-        <MapContainer />
-      </div>
-  );
+    return (
+        <ThemeProvider theme={theme}>
+            <MapContainer />
+        </ThemeProvider>
+    );
 }
 
 export default App;

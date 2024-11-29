@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import POIList from './POIList';
 import FlightInfo from './FlightInfo';
 import LegDetails from './LegDetails';
-import { Container, Grid, Typography } from '@mui/material';
+import { Container, Grid, Typography, Button, CircularProgress, LinearProgress } from '@mui/material';
+import jsPDF from 'jspdf';
+import { getStaticMapUrl } from '../utils/staticMap';
+import { convertBlobToBase64 } from '../utils/convertBlobToBase64';
 
 function MapContainer() {
     const [map, setMap] = useState(null);
@@ -15,19 +18,28 @@ function MapContainer() {
     const [legDetails, setLegDetails] = useState([]);
     const mapRef = useRef(null);
     const polylinesRef = useRef([]); // Use a ref for polylines
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // State for loading indicator
+    const [pdfProgress, setPdfProgress] = useState(0); // Progress state
+
+    // Replace 'REACT_APP_MY_MAP_KEY' with your actual env variable name
+    const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+    // Temporary console log for verification (remove after testing)
+    console.log('Google Maps API Key:', GOOGLE_MAPS_API_KEY);
 
     useEffect(() => {
-        const google = window.google;
-        const mapObj = new google.maps.Map(mapRef.current, {
-            center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
-            zoom: 4,
-        });
-        setMap(mapObj);
-    }, []);
+        if (window.google && mapRef.current && !map) {
+            const google = window.google;
+            const mapObj = new google.maps.Map(mapRef.current, {
+                center: { lat: 39.8283, lng: -98.5795 }, // Center of the US
+                zoom: 4,
+            });
+            setMap(mapObj);
+        }
+    }, [map]);
 
     const updateRoute = (markersParam, poiListParam) => {
         const google = window.google;
-
 
         const poiListToUse = poiListParam || poiList;
 
@@ -98,6 +110,94 @@ function MapContainer() {
         setLegDetails(legs);
     };
 
+    const generatePDF = async () => {
+        if (poiList.length === 0) {
+            alert('No POIs to export.');
+            return;
+        }
+
+        setIsGeneratingPDF(true);
+        setPdfProgress(0);
+
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Add title
+        doc.setFontSize(18);
+        doc.text('Flight Plan', pageWidth / 2, 15, { align: 'center' });
+
+        let yPosition = 25;
+        const totalPOIs = poiList.length;
+
+        for (const [index, poi] of poiList.entries()) {
+            // Add waypoint title
+            doc.setFontSize(14);
+            doc.text(`Waypoint ${index + 1}: ${poi.name}`, 10, yPosition);
+            yPosition += 10;
+
+            // Add leg details if applicable
+            if (index < legDetails.length) {
+                const leg = legDetails[index];
+                doc.setFontSize(12);
+                doc.text(`Distance to next waypoint: ${leg.distance} NM`, 10, yPosition);
+                yPosition += 7;
+                doc.text(`Heading to next waypoint: ${leg.heading}°`, 10, yPosition);
+                yPosition += 10;
+            }
+
+            // Generate Static Map URL
+            const staticMapUrl = getStaticMapUrl(poi, GOOGLE_MAPS_API_KEY);
+            console.log(`Fetching Static Map for POI "${poi.name}": ${staticMapUrl}`);
+
+            try {
+                // Fetch the image as a blob
+                const response = await fetch(staticMapUrl);
+                console.log(`Response Status for POI "${poi.name}":`, response.status, response.statusText);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                console.log(`Blob Size for POI "${poi.name}":`, blob.size, 'bytes');
+
+                // Convert blob to base64
+                const base64Image = await convertBlobToBase64(blob);
+                console.log(`Base64 Image Length for POI "${poi.name}":`, base64Image.length);
+
+                // Add the image to the PDF
+                doc.addImage(base64Image, 'PNG', 10, yPosition, 190, 100);
+                yPosition += 105;
+
+                // Add attribution
+                doc.setFontSize(8);
+                doc.text('Map data © Google', 10, yPosition);
+                yPosition += 10;
+
+                // Update progress
+                setPdfProgress(((index + 1) / totalPOIs) * 100);
+
+                // Check if adding the next POI would exceed the page height
+                if (yPosition + 120 > doc.internal.pageSize.getHeight()) {
+                    doc.addPage();
+                    yPosition = 15;
+                }
+            } catch (error) {
+                console.error(`Error fetching static map image for "${poi.name}":`, error);
+                alert(`Failed to fetch map image for "${poi.name}": ${error.message}`);
+                setIsGeneratingPDF(false);
+                setPdfProgress(0);
+                return;
+            }
+        }
+
+        // Save the PDF
+        doc.save('flight_plan.pdf');
+
+        setIsGeneratingPDF(false);
+        setPdfProgress(0);
+    };
+
     return (
         <Container>
             <Typography variant="h4" align="center" gutterBottom>
@@ -118,6 +218,29 @@ function MapContainer() {
                         averageSpeed={averageSpeed}
                         setAverageSpeed={setAverageSpeed}
                     />
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={generatePDF}
+                        disabled={isGeneratingPDF || poiList.length === 0}
+                        style={{ marginTop: '16px' }}
+                    >
+                        {isGeneratingPDF ? (
+                            <>
+                                <CircularProgress size={24} color="inherit" />
+                                &nbsp; Generating PDF...
+                            </>
+                        ) : (
+                            'Export Route to PDF'
+                        )}
+                    </Button>
+                    {isGeneratingPDF && (
+                        <LinearProgress
+                            variant="determinate"
+                            value={pdfProgress}
+                            style={{ marginTop: '10px' }}
+                        />
+                    )}
                 </Grid>
                 <Grid item xs={12} md={8}>
                     <div id="map" ref={mapRef} style={{ height: '60vh', width: '100%' }}></div>

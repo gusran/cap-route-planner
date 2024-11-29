@@ -35,7 +35,7 @@ function MapContainer() {
     const [legDetails, setLegDetails] = useState([]);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // State for loading indicator
     const [pdfProgress, setPdfProgress] = useState(0); // Progress state
-    const [routeName, setRouteName] = useState('Route 1'); // New state for route name
+    const [routeName, setRouteName] = useState('Route 1'); // State for route name
     const [openSnackbar, setOpenSnackbar] = useState(false); // State for success notification
 
     const mapRef = useRef(null);
@@ -95,6 +95,23 @@ function MapContainer() {
                 poiListToUse[i + 1].location.lng()
             );
 
+            // Check if origin and destination are the same
+            if (
+                poiListToUse[i].location.lat() === poiListToUse[i + 1].location.lat() &&
+                poiListToUse[i].location.lng() === poiListToUse[i + 1].location.lng()
+            ) {
+                console.warn(
+                    `POI ${i + 1} and POI ${i + 2} are the same location. Skipping polyline.`
+                );
+                legs.push({
+                    from: poiListToUse[i].name,
+                    to: poiListToUse[i + 1].name,
+                    distance: 0,
+                    heading: 0,
+                });
+                continue; // Skip drawing the polyline
+            }
+
             // Calculate distance in meters
             const legDistanceMeters = google.maps.geometry.spherical.computeDistanceBetween(
                 origin,
@@ -144,6 +161,13 @@ function MapContainer() {
     const generatePDF = async () => {
         if (poiList.length === 0) {
             alert('No POIs to export.');
+            return;
+        }
+
+        // Optional: Limit the number of POIs
+        const MAX_POIS_PER_PDF = 50; // Adjust as needed
+        if (poiList.length > MAX_POIS_PER_PDF) {
+            alert(`Cannot export more than ${MAX_POIS_PER_PDF} POIs to a single PDF.`);
             return;
         }
 
@@ -203,8 +227,8 @@ function MapContainer() {
                 `Leg ${index + 1}`,
                 leg.from,
                 leg.to,
-                leg.distance,
-                leg.heading,
+                leg.distance === '0.00' ? '0' : leg.distance, // Handle zero distance
+                leg.heading === '0' ? 'N/A' : leg.heading, // Handle zero heading
             ]);
 
             // Add table using autoTable

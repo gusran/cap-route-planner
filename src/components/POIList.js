@@ -215,6 +215,7 @@ function POIList({ map, poiList, setPoiList, markers, setMarkers, updateRoute })
             </List>
         </div>
     );
+
 }
 
 export default POIList;

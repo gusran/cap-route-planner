@@ -27,11 +27,10 @@ function MapContainer() {
     const updateRoute = (markersParam, poiListParam) => {
         const google = window.google;
 
-        const markersToUse = markersParam || markers;
         const poiListToUse = poiListParam || poiList;
 
-        if (markersToUse.length < 2) {
-            // Not enough markers to draw a route
+        if (poiListToUse.length < 2) {
+            // Not enough POIs to draw a route
             setTotalDistance(0);
             setLegDetails([]);
             return;
@@ -46,9 +45,9 @@ function MapContainer() {
         const newPolylines = [];
 
         // Draw new route
-        for (let i = 0; i < markersToUse.length - 1; i++) {
-            const origin = markersToUse[i].getPosition();
-            const destination = markersToUse[i + 1].getPosition();
+        for (let i = 0; i < poiListToUse.length - 1; i++) {
+            const origin = poiListToUse[i].location;
+            const destination = poiListToUse[i + 1].location;
 
             // Calculate distance in meters
             const legDistanceMeters = google.maps.geometry.spherical.computeDistanceBetween(

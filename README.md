@@ -1,70 +1,171 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Civil Air Patrol Route Planner
 
-## Available Scripts
+## **Purpose**
 
-In the project directory, you can run:
+The Civil Air Patrol Route Planner is a web application designed to assist civil aviation pilots in creating planning material for training exercises and missions. The app enables users to:
+- Add, reorder, rename, and remove Points of Interest (POIs).
+- Visualize a route connecting the POIs on an interactive map.
+- Generate a flight log with detailed leg information and export it as a professional-grade PDF, complete with satellite imagery and route details.
+- Plan routes with coordinates displayed in aviation-friendly formats (degrees and minutes).
 
-### `npm start`
+This tool streamlines the exercise planning, and prepares pilots for navigation tasks.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## **Stack**
 
-### `npm test`
+### **Frontend**
+- **React**: Core framework for building the interactive user interface.
+- **Material-UI (MUI)**: Provides modern, responsive UI components.
+- **Google Maps API**: Used for map rendering, place search, route visualization, and satellite imagery.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### **Utilities**
+- **UUID**: Generates unique identifiers for POIs.
+- **jsPDF**: Creates downloadable PDFs for route export.
+- **uuid**: Ensures unique identifiers for POIs.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## **How to Run**
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### **Prerequisites**
+1. **Node.js**: Install [Node.js](https://nodejs.org/) (LTS version recommended).
+2. **Google Maps API Key**: Obtain an API key from [Google Cloud Console](https://console.cloud.google.com/).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### **Setup**
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-repo/cap-route-planner.git
+   cd cap-route-planner
+   ```
 
-### `npm run eject`
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+3. Configure environment variables:
+   - Create a `.env` file in the root directory.
+   - Add your Google Maps API Key:
+     ```env
+     REACT_APP_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+     ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+4. Start the development server:
+   ```bash
+   npm start
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+5. Open your browser and navigate to:
+   ```
+   http://localhost:3000
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## **Features**
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### **1. POI Management**
+- Search and add POIs using the Google Maps Places API.
+- Reorder POIs via drag-and-drop.
+- Rename POIs for specific task references.
+- Remove unwanted POIs.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### **2. Route Visualization**
+- Visualize routes as polylines connecting POIs on an interactive Google Map.
+- Automatically adjusts the map bounds to fit all POIs.
 
-### Code Splitting
+### **3. PDF Export**
+- Generate a PDF containing:
+  - Route overview map.
+  - Leg details (distance, heading).
+  - Satellite imagery of each POI with coordinates.
+- Save PDFs for offline navigation preparation.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### **4. Coordinate Display**
+- Display latitude and longitude in aviation-friendly format (degrees and minutes).
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## **Project Structure**
 
-### Making a Progressive Web App
+```plaintext
+src/
+├── components/
+│   ├── MapContainer.js      # Main container for the map and app logic
+│   ├── MapView.js           # Renders the Google Map
+│   ├── POIList.js           # Handles POI management
+│   ├── POIItem.js           # Represents a single POI in the list
+│   ├── FlightInfo.js        # Displays flight metrics (total distance, speed)
+│   ├── LegDetails.js        # Displays detailed leg information
+│   ├── PDFGenerator.js      # Handles PDF generation
+├── context/
+│   └── MapContext.js        # Provides context for managing map and POI data
+├── hooks/
+│   ├── useGoogleMap.js      # Initializes and provides the Google Map instance
+│   ├── usePDFGenerator.js   # Handles PDF export logic
+├── utils/
+│   ├── staticMap.js         # Helper for generating static map URLs
+│   ├── convertBlobToBase64.js # Helper for converting blob to Base64 for PDFs
+│   ├── formatCoordinates.js # Helper for formatting coordinates
+├── App.js                   # Main application component
+├── index.js                 # Application entry point
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## **Customization**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### **1. Change Default Route Name**
+Modify the default route name in `PDFGenerator.js`:
+```javascript
+const [routeName, setRouteName] = useState('Route 1');
+```
 
-### Deployment
+### **2. Adjust Map Settings**
+Update map configuration in `useGoogleMap.js`:
+```javascript
+const mapOptions = {
+    center: { lat: 39.8283, lng: -98.5795 }, // Default center (USA)
+    zoom: 4, // Default zoom level
+};
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## **Future Enhancements**
+- Add user authentication for saving routes.
+- Enable collaborative route planning.
+- Provide weather overlays on the map.
+- Include support for waypoints with custom icons.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+## **Contributing**
+1. Fork the repository.
+2. Create a new branch:
+   ```bash
+   git checkout -b feature/new-feature
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m "Add new feature"
+   ```
+4. Push to the branch:
+   ```bash
+   git push origin feature/new-feature
+   ```
+5. Create a pull request.
+
+---
+
+## **License**
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## **Acknowledgments**
+- Google Maps Platform for providing the APIs.
+- Material-UI for the UI components.
+- Civil Air Patrol for inspiring the project.

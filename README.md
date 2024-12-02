@@ -21,7 +21,6 @@ This tool streamlines the exercise planning, and prepares pilots for navigation 
 - **Google Maps API**: Used for map rendering, place search, route visualization, and satellite imagery.
 
 ### **Utilities**
-- **UUID**: Generates unique identifiers for POIs.
 - **jsPDF**: Creates downloadable PDFs for route export.
 - **uuid**: Ensures unique identifiers for POIs.
 
